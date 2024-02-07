@@ -68,9 +68,9 @@
     </style>
 </head>
 
-<body>
+<body className="m-0">
     <main>
-        <div align="center">
+        <!-- <div align="center">
             <a href="https://ton.org/"><img width="48" src="./assets/tapps.png" alt="logo of telegram web apps"></a>
         </div>
         <h1>Modals</h1>
@@ -94,16 +94,191 @@
 
         <h1>Buttons</h1>
         <button onclick="Telegram.WebApp.expand();">Expand Webview</button>
-        <button onclick="toggleMainButton();">Toggle Main Button</button>
-        <div id="ton-connect"></div>
+        <button onclick="toggleMainButton();">Toggle Main Button</button> -->
+        <!-- <div id="ton-connect"></div> -->
+        <div id="app" className="w-screen h-screen">
+            <div id="ton-connect"></div>
 
+            <transition v-on:enter="enter" v-bind:css="false" appear>
+                <div class="butter-cheese-eggs" v-show="true">
+                    <div v-for="(block, index) in grid" @click="select(index)">
+                        <block :figure.sync="block.figure" />
+                    </div>
+                </div>
+            </transition>
+
+            <transition v-on:enter="enterWin" v-bind:css="false">
+                <win v-show="winner" :click-handler="restart"></win>
+            </transition>
+        </div>
+
+        <template id="block">
+            <div class="block">
+                <transition v-on:enter="enter" v-bind:css="false">
+                    <span v-show="figure > -1">{{ fig }}</span>
+                </transition>
+            </div>
+        </template>
+
+        <template id="win">
+            <div class="win">
+                <h2>Win</h2>
+                <!--<button @click="clickHandler">Play again</button>-->
+            </div>
+        </template>
 
     </main>
-    <div id="viewport"></div>
+    <!-- <div id="viewport"></div>
     <div id="viewport-params-size"></div>
-    <div id="viewport-params-expand"></div>
+    <div id="viewport-params-expand"></div> -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.0.3/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.15.0/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.19.0/TweenMax.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="./index.css" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        clifford: '#da373d',
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        let state = {
+            grid: _.map(_.range(0, 9), (index) => {
+                return { index, figure: -1 }
+            }),
+            myTurn: false
+        }
+
+        const appState = _.cloneDeep(state)
+
+        const block = Vue.component('block', {
+            name: 'block',
+
+            template: '#block',
+
+            props: {
+                figure: {
+                    type: Number,
+                    default: -1
+                }
+            },
+
+            computed: {
+                fig() {
+                    return this.figure === 0 ? 'O' : 'X'
+                }
+            },
+
+            data() {
+                return {
+                    selected: false
+                }
+            },
+
+            methods: {
+                enter(el, done) {
+                    TweenMax.from(el, 1, {
+                        autoAlpha: 0,
+                        scale: 0,
+                        ease: Elastic.easeOut.config(1.25, 0.5),
+                        onComplete: done
+                    })
+                }
+            }
+        })
+
+        const win = Vue.component('win', {
+            name: 'win',
+            template: '#win',
+            props: {
+                clickHandler: {
+                    type: Function,
+                    default: null
+                }
+            }
+        })
+
+        const app = new Vue({
+            name: 'app',
+
+            el: '#app',
+
+            data() {
+                return state
+            },
+
+            components: {
+                block
+            },
+
+            computed: {
+                winner() {
+                    const wins = ['012', '036', '345', '147', '258', '678', '048', '246']
+                    const grid = this.grid
+                    const player = this.myTurn ? 0 : 1
+                    const moves = _.reduce(this.grid, (result, value, index) => {
+                        if (value.figure === player) {
+                            result.push(index)
+                        }
+
+                        return result
+                    }, [])
+
+                    return !!_.find(wins, win => {
+                        const combination = _.map(win.split(''), n => parseInt(n));
+                        console.log('combination', combination, moves)
+                        Telegram.WebApp.MainButton.onClick(function () {
+                            Telegram.WebApp.showAlert('Win')
+                        });
+                        return _.difference(combination, moves).length === 0;
+                    })
+                }
+            },
+
+            methods: {
+                select(index) {
+                    const { figure } = this.grid[index]
+
+                    if (figure > -1) {
+                        return;
+                    }
+
+                    this.grid[index].figure = this.myTurn ? 1 : 0
+                    this.myTurn = !this.myTurn
+                },
+
+                restart() {
+                    this.grid = appState.grid
+                    this.myTurn = appState.myTurn
+                },
+
+                enter(el, done) {
+                    TweenMax.from(el, 1, {
+                        autoAlpha: 0,
+                        scale: 0,
+                        ease: Elastic.easeOut.config(1.25, 0.5)
+                    })
+                },
+
+                enterWin(el) {
+                    TweenMax.from(el, 1, {
+                        autoAlpha: 0,
+                        scale: 0,
+                        ease: Elastic.easeOut.config(1.25, 0.5)
+                    })
+                }
+            }
+        })
+    </script>
     <script>
         // Init TWA
         Telegram.WebApp.ready();
@@ -172,18 +347,18 @@
             buttonRootId: 'ton-connect'
         });
     </script>
-    <script>
+    <!-- <script>
         async function connectToWallet() {
             const connectedWallet = await tonConnectUI.connectWallet();
             // Do something with connectedWallet if needed
             console.log(connectedWallet);
         }
-    
+
         // Call the function
         connectToWallet().catch(error => {
             console.error("Error connecting to wallet:", error);
         });
-    </script>
+    </script> -->
     <!-- Eruda is console for mobile browsers -->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
