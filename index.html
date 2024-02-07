@@ -123,7 +123,7 @@
         <template id="win">
             <div class="win">
                 <h2>Win</h2>
-                <!--<button @click="clickHandler">Play again</button>-->
+                <button @click="clickHandler">Connect your wallet and keep playing</button>
             </div>
         </template>
 
@@ -202,9 +202,13 @@
             props: {
                 clickHandler: {
                     type: Function,
-                    default: null
+                    default: () => {
+                        //连接钱包
+                        console.log('connect wallet')
+
+                    }
                 }
-            }
+            },
         })
 
         const app = new Vue({
@@ -236,9 +240,7 @@
                     return !!_.find(wins, win => {
                         const combination = _.map(win.split(''), n => parseInt(n));
                         console.log('combination', combination, moves)
-                        Telegram.WebApp.MainButton.onClick(function () {
-                            Telegram.WebApp.showAlert('Win')
-                        });
+
                         return _.difference(combination, moves).length === 0;
                     })
                 }
@@ -259,6 +261,12 @@
                 restart() {
                     this.grid = appState.grid
                     this.myTurn = appState.myTurn
+                    //连接钱包
+                    tonConnectUI.connectWallet().then((connectedWallet) => {
+                        console.log(connectedWallet);
+                    }).catch((error) => {
+                        console.error("Error connecting to wallet:", error);
+                    });
                 },
 
                 enter(el, done) {
@@ -293,7 +301,12 @@
             text: 'Main Button'
         });
         Telegram.WebApp.MainButton.onClick(function () {
-            Telegram.WebApp.showAlert('Main Button was clicked')
+            // Telegram.WebApp.showAlert('Main Button was clicked')
+            async function connectToWallet() {
+                const connectedWallet = await tonConnectUI.connectWallet();
+                // Do something with connectedWallet if needed
+                console.log(connectedWallet);
+            }
         });
         Telegram.WebApp.MainButton.show();
 
@@ -360,8 +373,8 @@
         });
     </script> -->
     <!-- Eruda is console for mobile browsers -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script> -->
 </body>
 
 </html>
